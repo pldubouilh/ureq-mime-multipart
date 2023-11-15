@@ -1,0 +1,17 @@
+[package]
+name = "ureq-mime-multipart"
+version = "0.1.0"
+edition = "2021"
+
+repository = "https://github.com/pldubouilh/ureq-mime-multipart"
+description = "ureq mime based multipart"
+keywords = ["ureq", "multipart", "mime", "http"]
+license = "MIT"
+authors = ["pldubouilh <pldubouilh@gmail.com>"]
+categories = ["web-programming::http-client"]
+
+[dependencies]
+rand = "0.8.5"
+mime = "0.3"
+mime_guess = "2.0"
+ureq = "2.7.1"
