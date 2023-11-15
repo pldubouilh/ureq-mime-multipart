@@ -10,7 +10,7 @@
 //! use ureq_multipart::MultipartBuilder;
 //!
 //! let (content_type,data) = MultipartBuilder::new()
-//!             .add_file("test","/home/feiy/Desktop/1.txt").unwrap()
+//!             .add_file("test","1.txt").unwrap()
 //!             .add_text("name","value")
 //!             .finish().unwrap();
 //! let resp: Value = ureq::post("http://some.service.url")
@@ -27,7 +27,7 @@
 //! use ureq_multipart::MultipartRequest;
 //!
 //! let resp: Value = ureq::post("http://some.service.url")
-//!             .send_multipart_file("name","&/home/feiy/Desktop/1.txt")?
+//!             .send_multipart_file("name","1.txt")?
 //!             .into_json()?
 //!
 //! ```
@@ -72,7 +72,7 @@ impl Default for MultipartBuilder {
         Self::new()
     }
 }
-#[allow(dead_code)]
+
 impl MultipartBuilder {
     pub fn new() -> Self {
         Self {
@@ -189,9 +189,9 @@ impl MultipartRequest for Request {
             let file_path = file_path.as_ref();
             let file_name = file_path
                 .file_name()
-                .expect("读取文件名称")
+                .unwrap_or_default()
                 .to_str()
-                .unwrap();
+                .unwrap_or_default();
             builder = builder.add_file(file_name, file_path)?;
         }
         let (content_type, data) = builder.finish()?;
@@ -207,16 +207,51 @@ impl MultipartRequest for Request {
 mod test {
     use super::*;
 
+    fn get_file_string(p: &Path) -> String {
+        let mut file = File::open(p).unwrap();
+        let mut file_content = Vec::new();
+        file.read_to_end(&mut file_content).unwrap();
+        String::from_utf8(file_content.clone()).unwrap()
+    }
+
     #[test]
     fn test_builder() {
-        let p = Path::new("test-vector1.txt");
+        let p = Path::new("test-vector0.txt");
+        let file_str = get_file_string(p);
+
         let (content_type, data) = MultipartBuilder::new()
             .add_file("test", p)
             .unwrap()
             .finish()
             .unwrap();
-        println!("{content_type}");
-        println!("{data:?}");
-        println!("{}", String::from_utf8(data).unwrap());
+
+        assert!(data.len() > 0);
+        assert!(content_type.contains("multipart/form-data;"));
+        let datastr = String::from_utf8(data.clone()).unwrap();
+        assert!(datastr.contains(&file_str));
+    }
+
+    #[test]
+    fn test_ureq() {
+        let p0 = Path::new("test-vector0.txt");
+        let p1 = Path::new("test-vector1.txt");
+        let file0_str = get_file_string(p0);
+        let file1_str = get_file_string(p0);
+
+        let resp = ureq::post("https://httpbin.org/anything")
+            .send_multipart_file("name", p0)
+            .unwrap();
+        assert!(resp.status() == 200);
+        let body = resp.into_string().unwrap();
+        assert!(body.contains(&file0_str));
+
+        let resp = ureq::post("https://httpbin.org/anything")
+            .send_multipart_files(&[p0, p1])
+            .unwrap();
+        assert!(resp.status() == 200);
+        let body = resp.into_string().unwrap();
+        println!("body {:?}", body);
+        assert!(body.contains(&file0_str));
+        assert!(body.contains(&file1_str));
     }
 }
