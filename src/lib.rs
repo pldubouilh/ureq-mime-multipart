@@ -13,10 +13,11 @@
 //!             .add_file("test","1.txt").unwrap()
 //!             .add_text("name","value")
 //!             .finish().unwrap();
+//!
 //! let resp: Value = ureq::post("http://some.service.url")
 //!             .set("Content-Type", &content_type)
 //!             .send_bytes(&data)?
-//!             .into_json()?
+//!             .into_json()?;
 //!
 //! ```
 //!
@@ -28,7 +29,7 @@
 //!
 //! let resp: Value = ureq::post("http://some.service.url")
 //!             .send_multipart_file("name","1.txt")?
-//!             .into_json()?
+//!             .into_json()?;
 //!
 //! ```
 use mime::Mime;
